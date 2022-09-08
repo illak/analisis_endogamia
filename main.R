@@ -71,4 +71,4 @@ datos_categorias <- datos %>%
 ggsave("plot1.png", width = 10, height = 10, dpi = 320)
 
 
-(recurrencia_)
+
