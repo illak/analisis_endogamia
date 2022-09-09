@@ -227,5 +227,5 @@ plot_total <- recurrencia_periodos_plot + recurrencia_periodos_grupo2 +
   plot_layout(widths = c(1.6,3))
 
 
-ggsave("plot_total.png", plot_total, width = 20, height = 10, dpi = 320)
+ggsave("plot_total.png", plot_total, width = 20, height = 12, dpi = 320)
 
