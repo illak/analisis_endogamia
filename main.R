@@ -36,13 +36,13 @@ datos_categorias <- datos %>%
   ) %>% 
   mutate(
     categoria = case_when(
-      periodo=="P1" ~ "nuevos",
+      periodo=="P1" ~ "nuevas",
       periodo=="P2" & p1_act=="Si" ~ "recurrentes_p1",
-      periodo=="P2" & p1_act=="No" ~ "nuevos",
+      periodo=="P2" & p1_act=="No" ~ "nuevas",
       periodo=="P3" & p1_act=="Si" & p2_act=="No" ~ "recurrentes_p1",
       periodo=="P3" & p1_act=="Si" & p2_act=="Si" ~ "recurrentes_p1_p2",
       periodo=="P3" & p1_act=="No" & p2_act=="Si" ~ "recurrentes_p2",
-      periodo=="P3" & p1_act=="No" & p2_act=="No" ~ "nuevos",
+      periodo=="P3" & p1_act=="No" & p2_act=="No" ~ "nuevas",
       periodo=="P4" & p1_act=="Si" & p2_act=="No" & p3_act=="No" ~ "recurrentes_p1",
       periodo=="P4" & p1_act=="Si" & p2_act=="Si" & p3_act=="No" ~ "recurrentes_p1_p2",
       periodo=="P4" & p1_act=="Si" & p2_act=="Si" & p3_act=="Si" ~ "recurrentes_p1_p2_p3",
@@ -50,18 +50,65 @@ datos_categorias <- datos %>%
       periodo=="P4" & p1_act=="No" & p2_act=="Si" & p3_act=="No" ~ "recurrentes_p2",
       periodo=="P4" & p1_act=="No" & p2_act=="No" & p3_act=="Si" ~ "recurrentes_p3",
       periodo=="P4" & p1_act=="Si" & p2_act=="No" & p3_act=="Si" ~ "recurrentes_p1_p3",
-      periodo=="P4" & p1_act=="No" & p2_act=="No" & p3_act=="No" ~ "nuevos"),
+      periodo=="P4" & p1_act=="No" & p2_act=="No" & p3_act=="No" ~ "nuevas"),
     categoria = as.factor(categoria)
   )
 
 
+
+
+lineas_verticales_alturas <- datos_categorias %>% 
+  filter(periodo != "P1", categoria!="nuevas") %>% 
+  group_by(periodo) %>% 
+  summarise(altura = n_distinct(idpersona)) %>% 
+  pull(altura)
+
+lineas_verticales_pos <- c(2.35,3.35,4.35)
+
+lineas_v <- data.frame(
+  x = lineas_verticales_pos,
+  xend = lineas_verticales_pos,
+  y = 0,
+  yend = lineas_verticales_alturas
+)
+
+lineas_h <- data.frame(
+  x = c(2.3,3.3,4.3),
+  xend = c(2.4,3.4,4.4),
+  y = lineas_verticales_alturas,
+  yend = lineas_verticales_alturas
+)
+
+porcentajes <- datos_categorias %>% 
+  filter(periodo != "P1") %>% 
+  group_by(periodo) %>% 
+  summarise(total = n_distinct(idpersona),
+            recurrentes = n_distinct(idpersona[categoria!="nuevas"])) %>% 
+  mutate(pct = recurrentes / total) %>% 
+  pull(pct)
+
+porcentajes_df <- data.frame(
+  label = porcentajes,
+  x = c(2.4,3.4,4.4),
+  y = lineas_verticales_alturas / 2
+)
+
 (recurrencia_periodos_plot <- datos_categorias %>% 
-  mutate(periodo_mod = glue("<b>{periodo}</b><br><i>{periodo_anio}</i>")) %>% 
+  mutate(periodo_mod = glue("<b>{periodo}</b><br><i>({periodo_anio})</i>")) %>% 
   group_by(periodo_mod, categoria) %>% 
   summarise(n = n_distinct(idpersona)) %>% 
-  ggplot(aes(x = periodo_mod, y = n, fill = categoria)) +
-  geom_col(width = .5) +
+  ggplot(aes(x = periodo_mod, y = n)) +
+  geom_col(aes(fill = categoria), width = .5, color = "black") +
+  geom_segment(data = lineas_v, mapping = aes(x = x, xend = xend, y = y, yend = yend),
+               size = 1) +
+  geom_segment(data = lineas_h, mapping = aes(x = x, xend = xend, y = y, yend = yend),
+               size = 1) +
+  geom_text(data = porcentajes_df, 
+            mapping = aes(label = scales::percent(label, accuracy = 1), x = x, y = y), 
+            hjust = 0, size = 5) +
+  scale_y_continuous(breaks = seq(0,10000,2000)) +
   ggthemes::scale_fill_tableau() +
+  coord_cartesian(clip = "off") +
   labs(y = NULL, fill = "Categoría", x = "Periodo") +
   theme_minimal(base_size = 18) +
   theme(
