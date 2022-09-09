@@ -1,6 +1,8 @@
 library(tidyverse)
 library(ggtext)
 library(glue)
+library(patchwork)
+
 
 datos <- read_csv("data/datos.csv")
 
@@ -18,39 +20,41 @@ datos_endogamia1 <- datos %>%
 
 
 
-datos <- read_csv("data/datos_v3.csv")
+datos <- read_csv("data/datos_v4.csv")
 
 datos_categorias <- datos %>% 
   mutate(
     periodo = case_when(
       cohorte_anio %in% c(2016,2017) ~ "P1",
       cohorte_anio %in% c(2018,2019) ~ "P2",
-      cohorte_anio %in% c(2020,2021) ~ "P3",
-      cohorte_anio %in% c(2022,2023) ~ "P4"),
-    periodo = factor(periodo, levels = c("P1","P2","P3","P4")),
+      cohorte_anio %in% c(2020) ~ "P3",
+      cohorte_anio %in% c(2021) ~ "P4",
+      cohorte_anio %in% c(2022) ~ "P5"),
+    periodo = factor(periodo, levels = c("P1","P2","P3","P4","P5")),
     periodo_anio = case_when(
       periodo=="P1" ~ "2016-2017",
       periodo=="P2" ~ "2018-2019",
-      periodo=="P3" ~ "2020-2021",
-      periodo=="P4" ~ "2022-2023")
+      periodo=="P3" ~ "2020",
+      periodo=="P4" ~ "2021",
+      periodo=="P5" ~ "2022")
   ) %>% 
   mutate(
     categoria = case_when(
       periodo=="P1" ~ "nuevas",
       periodo=="P2" & p1_act=="Si" ~ "recurrentes_p1",
       periodo=="P2" & p1_act=="No" ~ "nuevas",
-      periodo=="P3" & p1_act=="Si" & p2_act=="No" ~ "recurrentes_p1",
-      periodo=="P3" & p1_act=="Si" & p2_act=="Si" ~ "recurrentes_p1_p2",
-      periodo=="P3" & p1_act=="No" & p2_act=="Si" ~ "recurrentes_p2",
+      periodo=="P3" & p1_act=="Si" ~ "recurrentes_p1",
+      periodo=="P3" & p2_act=="Si" ~ "recurrentes_p2",
       periodo=="P3" & p1_act=="No" & p2_act=="No" ~ "nuevas",
-      periodo=="P4" & p1_act=="Si" & p2_act=="No" & p3_act=="No" ~ "recurrentes_p1",
-      periodo=="P4" & p1_act=="Si" & p2_act=="Si" & p3_act=="No" ~ "recurrentes_p1_p2",
-      periodo=="P4" & p1_act=="Si" & p2_act=="Si" & p3_act=="Si" ~ "recurrentes_p1_p2_p3",
-      periodo=="P4" & p1_act=="No" & p2_act=="Si" & p3_act=="Si" ~ "recurrentes_p2_p3",
-      periodo=="P4" & p1_act=="No" & p2_act=="Si" & p3_act=="No" ~ "recurrentes_p2",
-      periodo=="P4" & p1_act=="No" & p2_act=="No" & p3_act=="Si" ~ "recurrentes_p3",
-      periodo=="P4" & p1_act=="Si" & p2_act=="No" & p3_act=="Si" ~ "recurrentes_p1_p3",
-      periodo=="P4" & p1_act=="No" & p2_act=="No" & p3_act=="No" ~ "nuevas"),
+      periodo=="P4" & p1_act=="Si" ~ "recurrentes_p1",
+      periodo=="P4" & p2_act=="Si" ~ "recurrentes_p2",
+      periodo=="P4" & p3_act=="Si" ~ "recurrentes_p3",
+      periodo=="P4" & p1_act=="No" & p2_act=="No" & p3_act=="No" ~ "nuevas",
+      periodo=="P5" & p1_act=="Si" ~ "recurrentes_p1",
+      periodo=="P5" & p2_act=="Si" ~ "recurrentes_p2",
+      periodo=="P5" & p3_act=="Si" ~ "recurrentes_p3",
+      periodo=="P5" & p4_act=="Si" ~ "recurrentes_p4",
+      periodo=="P5" & p1_act=="No" & p2_act=="No" & p3_act=="No" & p4_act=="No" ~ "nuevas"),
     categoria = as.factor(categoria)
   )
 
@@ -63,7 +67,7 @@ lineas_verticales_alturas <- datos_categorias %>%
   summarise(altura = n_distinct(idpersona)) %>% 
   pull(altura)
 
-lineas_verticales_pos <- c(2.35,3.35,4.35)
+lineas_verticales_pos <- c(2.35,3.35,4.35,5.35)
 
 lineas_v <- data.frame(
   x = lineas_verticales_pos,
@@ -73,8 +77,8 @@ lineas_v <- data.frame(
 )
 
 lineas_h <- data.frame(
-  x = c(2.3,3.3,4.3),
-  xend = c(2.4,3.4,4.4),
+  x = c(2.3,3.3,4.3,5.3),
+  xend = c(2.4,3.4,4.4,5.4),
   y = lineas_verticales_alturas,
   yend = lineas_verticales_alturas
 )
@@ -89,7 +93,7 @@ porcentajes <- datos_categorias %>%
 
 porcentajes_df <- data.frame(
   label = porcentajes,
-  x = c(2.4,3.4,4.4),
+  x = c(2.4,3.4,4.4,5.4),
   y = lineas_verticales_alturas / 2
 )
 
@@ -99,6 +103,7 @@ porcentajes_df <- data.frame(
   summarise(n = n_distinct(idpersona)) %>% 
   ggplot(aes(x = periodo_mod, y = n)) +
   geom_col(aes(fill = categoria), width = .5, color = "black") +
+  geom_text(aes(label = n, group = categoria), position=position_stack(vjust=0.5)) +
   geom_segment(data = lineas_v, mapping = aes(x = x, xend = xend, y = y, yend = yend),
                size = 1) +
   geom_segment(data = lineas_h, mapping = aes(x = x, xend = xend, y = y, yend = yend),
@@ -108,14 +113,119 @@ porcentajes_df <- data.frame(
             hjust = 0, size = 5) +
   scale_y_continuous(breaks = seq(0,10000,2000)) +
   ggthemes::scale_fill_tableau() +
+  ggtitle("Recurrencia general") +
   coord_cartesian(clip = "off") +
   labs(y = NULL, fill = "Categoría", x = "Periodo") +
-  theme_minimal(base_size = 18) +
+  theme_minimal(base_size = 17) +
   theme(
-    axis.text.x = element_markdown()
+    axis.text.x = element_markdown(),
+    plot.title.position = "plot"
   ))
 
 ggsave("plot1.png", width = 10, height = 10, dpi = 320)
 
 
+
+# Por agrupaciones ad-hoc ----
+
+datos_agrupaciones <- read_csv("data/agrupaciones.csv")
+
+
+datos_rec_grupo <- datos_categorias %>% 
+  left_join(datos_agrupaciones) %>% 
+  mutate(categoria = if_else(categoria=="nuevas","nuevas","recurrentes"))
+
+recurrencia_periodos_grupo <- datos_rec_grupo %>% 
+  group_by(grupo, periodo, categoria) %>% 
+  summarise(n = n_distinct(idpersona)) %>% 
+  ggplot(aes(x = periodo, y = n, fill=categoria)) +
+  geom_col() +
+  ggthemes::scale_fill_tableau() +
+  labs(y = NULL) +
+  facet_wrap(vars(grupo)) +
+  theme_minimal() +
+  theme(
+    strip.background = element_rect(color = "black")
+  )
+
+
+recurrencia_periodos_grupo
+
+
+datos_2 <- datos %>% 
+  left_join(datos_agrupaciones)
+
+filtros <- datos_agrupaciones %>% 
+  pull(grupo) %>% 
+  unique()
+
+mi_func <- function(filtro) {
+    
+  datos_2 %>% 
+    filter(grupo == {{filtro}}) %>%
+    mutate(grupo = str_wrap(grupo, width = 30)) %>% 
+    mutate(
+      periodo = case_when(
+        cohorte_anio %in% c(2016,2017) ~ "P1",
+        cohorte_anio %in% c(2018,2019) ~ "P2",
+        cohorte_anio %in% c(2020) ~ "P3",
+        cohorte_anio %in% c(2021) ~ "P4",
+        cohorte_anio %in% c(2022) ~ "P5"),
+      periodo = factor(periodo, levels = c("P1","P2","P3","P4","P5")),
+      periodo_anio = case_when(
+        periodo=="P1" ~ "2016-2017",
+        periodo=="P2" ~ "2018-2019",
+        periodo=="P3" ~ "2020",
+        periodo=="P4" ~ "2021",
+        periodo=="P5" ~ "2022")
+    ) %>% 
+    mutate(
+      categoria = case_when(
+        periodo=="P1" ~ "nuevas",
+        periodo=="P2" & p1_act=="Si" ~ "recurrentes_p1",
+        periodo=="P2" & p1_act=="No" ~ "nuevas",
+        periodo=="P3" & p1_act=="Si" ~ "recurrentes_p1",
+        periodo=="P3" & p2_act=="Si" ~ "recurrentes_p2",
+        periodo=="P3" & p1_act=="No" & p2_act=="No" ~ "nuevas",
+        periodo=="P4" & p1_act=="Si" ~ "recurrentes_p1",
+        periodo=="P4" & p2_act=="Si" ~ "recurrentes_p2",
+        periodo=="P4" & p3_act=="Si" ~ "recurrentes_p3",
+        periodo=="P4" & p1_act=="No" & p2_act=="No" & p3_act=="No" ~ "nuevas",
+        periodo=="P5" & p1_act=="Si" ~ "recurrentes_p1",
+        periodo=="P5" & p2_act=="Si" ~ "recurrentes_p2",
+        periodo=="P5" & p3_act=="Si" ~ "recurrentes_p3",
+        periodo=="P5" & p4_act=="Si" ~ "recurrentes_p4",
+        periodo=="P5" & p1_act=="No" & p2_act=="No" & p3_act=="No" & p4_act=="No" ~ "nuevas"),
+      categoria = as.factor(categoria)
+    )
+  
+}
+
+mi_df <- map_df(filtros, mi_func)
+
+recurrencia_periodos_grupo2 <- mi_df %>% 
+  group_by(grupo, periodo, categoria) %>% 
+  summarise(n = n_distinct(idpersona)) %>% 
+  ggplot(aes(x = periodo, y = n, fill=categoria)) +
+  geom_col() +
+  ggthemes::scale_fill_tableau() +
+  labs(y = NULL) +
+  guides(fill = "none") +
+  ggtitle("Recurrencia por grupo de propuestas") +
+  facet_wrap(vars(grupo)) +
+  theme_minimal(base_size = 17) +
+  theme(
+    strip.background = element_rect(color = "black"),
+    strip.text = element_text(size = 12),
+    plot.title.position = "plot"
+  )
+
+recurrencia_periodos_grupo2
+
+
+plot_total <- recurrencia_periodos_plot + recurrencia_periodos_grupo2 +
+  plot_layout(widths = c(1.6,3))
+
+
+ggsave("plot_total.png", plot_total, width = 20, height = 10, dpi = 320)
 
