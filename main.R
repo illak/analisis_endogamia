@@ -229,3 +229,63 @@ plot_total <- recurrencia_periodos_plot + recurrencia_periodos_grupo2 +
 
 ggsave("plot_total.png", plot_total, width = 20, height = 12, dpi = 320)
 
+
+
+# segundo approach (personas) ----
+
+datos_personas <- datos %>% 
+  mutate(
+    periodo = case_when(
+      cohorte_anio %in% c(2016) ~ "2016",
+      cohorte_anio %in% c(2017) ~ "2017",
+      cohorte_anio %in% c(2018) ~ "2018",
+      cohorte_anio %in% c(2019) ~ "2019",
+      cohorte_anio %in% c(2020) ~ "2020",
+      cohorte_anio %in% c(2021) ~ "2021",
+      cohorte_anio %in% c(2022) ~ "2022"),
+    periodo = factor(periodo, levels = c("2016","2017","2018","2019","2020","2021","2022"))
+  ) %>% 
+  left_join(datos_agrupaciones)
+
+
+analisis_grupo <- function(filtro){
+  
+  datos_personas %>% 
+    filter(grupo == {{filtro}}) %>% 
+    group_by(idpersona) %>% 
+    arrange(periodo) %>% 
+    mutate(prev = lag(periodo)) %>% 
+    ungroup()
+  
+}
+
+filtros <- datos_agrupaciones %>% 
+  pull(grupo) %>% 
+  unique()
+
+dfs <- map_df(filtros, analisis_grupo)
+
+recurrencia_x_grupo <- dfs %>% 
+  mutate(grupo = str_wrap(grupo, width = 30)) %>% 
+  group_by(grupo, periodo) %>% 
+  summarise(nuevas = n_distinct(idpersona[is.na(prev)]),
+            recurrentes = n_distinct(idpersona[!is.na(prev)])) %>% 
+  pivot_longer(cols = c(nuevas, recurrentes), names_to = "categoria", values_to = "n") %>% 
+  ggplot(aes(x = periodo, y = n, fill=categoria)) +
+  geom_col() +
+  ggthemes::scale_fill_tableau() +
+  labs(y = NULL) +
+  guides(fill = "none") +
+  ggtitle("Recurrencia al interior de cada grupo de propuestas") +
+  labs(subtitle = "Personas que registran matrícula por <i style='color:#4E79A7'>primera vez</i> y personas <i style='color:#F28E2B'>recurrentes</i>") +
+  facet_wrap(vars(grupo)) +
+  theme_minimal(base_size = 17) +
+  theme(
+    strip.background = element_rect(color = "black"),
+    strip.text = element_text(size = 12),
+    plot.title.position = "plot",
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 10),
+    plot.subtitle = element_markdown()
+  )
+
+recurrencia_x_grupo
