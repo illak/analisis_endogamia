@@ -289,3 +289,6 @@ recurrencia_x_grupo <- dfs %>%
   )
 
 recurrencia_x_grupo
+
+
+# test ----
