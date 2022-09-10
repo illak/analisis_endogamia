@@ -292,3 +292,93 @@ recurrencia_x_grupo
 
 
 # test ----
+
+
+datos_categorias <- datos %>% 
+  mutate(
+    periodo = case_when(
+      cohorte_anio == 2016 ~ "2016",
+      cohorte_anio == 2017 ~ "2017",
+      cohorte_anio == 2018 ~ "2018",
+      cohorte_anio == 2019 ~ "2019",
+      cohorte_anio == 2020 ~ "2020",
+      cohorte_anio == 2021 ~ "2021",
+      cohorte_anio == 2022 ~ "2022"),
+    periodo = factor(periodo, levels = c("2016","2017","2018","2019","2020","2021","2022")),
+  ) %>% 
+  select(idpersona, periodo) %>% 
+  distinct() %>% 
+  group_by(idpersona) %>% 
+  arrange(periodo) %>% 
+  mutate(prev = lag(periodo)) %>% 
+  ungroup()
+
+
+
+
+lineas_verticales_alturas <- datos_categorias %>% 
+  filter(!is.na(prev)) %>% 
+  group_by(periodo) %>% 
+  summarise(altura = n_distinct(idpersona)) %>% 
+  pull(altura)
+
+lineas_verticales_pos <- c(2.35,3.35,4.35,5.35,6.35,7.35)
+
+lineas_v <- data.frame(
+  x = lineas_verticales_pos,
+  xend = lineas_verticales_pos,
+  y = 0,
+  yend = lineas_verticales_alturas
+)
+
+lineas_h <- data.frame(
+  x = c(2.3,3.3,4.3,5.3,6.3,7.3),
+  xend = c(2.4,3.4,4.4,5.4,6.4,7.4),
+  y = lineas_verticales_alturas,
+  yend = lineas_verticales_alturas
+)
+
+porcentajes <- datos_categorias %>% 
+  filter(periodo != "2016") %>% 
+  group_by(periodo) %>% 
+  summarise(total = n_distinct(idpersona),
+            recurrentes = n_distinct(idpersona[!is.na(prev)])) %>% 
+  mutate(pct = recurrentes / total) %>% 
+  pull(pct)
+
+porcentajes_df <- data.frame(
+  label = porcentajes,
+  x = c(2.4,3.4,4.4,5.4,6.4,7.4),
+  y = lineas_verticales_alturas / 2
+)
+
+(recurrencia_periodos_plot <- datos_categorias %>% 
+    group_by(periodo) %>% 
+    summarise(nuevas = n_distinct(idpersona[is.na(prev)]),
+              recurrentes = n_distinct(idpersona[!is.na(prev)])) %>% 
+    ungroup() %>% 
+    pivot_longer(cols = c(nuevas, recurrentes), names_to = "categoria", values_to = "n") %>% 
+    filter(n > 0) %>% 
+    mutate(periodo_mod = glue("<i>{periodo}</i>")) %>% 
+    ggplot(aes(x = periodo_mod, y = n)) +
+    geom_col(aes(fill = categoria), width = .5, color = "black") +
+    geom_text(aes(label = n, group = categoria), position=position_stack(vjust=0.5)) +
+    geom_segment(data = lineas_v, mapping = aes(x = x, xend = xend, y = y, yend = yend),
+                 size = 1, linetype = "dashed", color = "grey50") +
+    geom_segment(data = lineas_h, mapping = aes(x = x, xend = xend, y = y, yend = yend),
+                 size = 1, color = "grey50") +
+    geom_text(data = porcentajes_df, 
+              mapping = aes(label = scales::percent(label, accuracy = 1), x = x, y = y), 
+              hjust = 0, size = 5, color = "grey30") +
+    scale_y_continuous(breaks = seq(0,10000,2000)) +
+    ggthemes::scale_fill_tableau() +
+    ggtitle("Recurrencia general") +
+    coord_cartesian(clip = "off") +
+    labs(y = NULL, fill = "Categoría", x = "Año") +
+    theme_minimal(base_size = 17) +
+    theme(
+      axis.text.x = element_markdown(),
+      plot.title.position = "plot",
+      legend.position = "top",
+      plot.margin = margin(0,10,0,0,unit="mm")
+    ))
