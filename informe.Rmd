@@ -100,14 +100,14 @@ porcentajes_df <- data.frame(
     mutate(periodo_mod = glue("<i>{periodo}</i>")) %>% 
     ggplot(aes(x = periodo_mod, y = n)) +
     geom_col(aes(fill = categoria), width = .5, color = "black") +
-    geom_text(aes(label = n, group = categoria), position=position_stack(vjust=0.5)) +
+    geom_text(aes(label = n, group = categoria), position=position_stack(vjust=0.5), size = 6) +
     geom_segment(data = lineas_v, mapping = aes(x = x, xend = xend, y = y, yend = yend),
                  size = .5, linetype = "dashed", color = "grey50") +
     geom_segment(data = lineas_h, mapping = aes(x = x, xend = xend, y = y, yend = yend),
                  size = .5, color = "grey50") +
     geom_label(data = porcentajes_df, 
               mapping = aes(label = scales::percent(label, accuracy = 1), x = x -.1, y = y), 
-              hjust = 0, size = 4, color = "grey30") +
+              hjust = 0, size = 6, color = "grey30") +
     scale_y_continuous(breaks = seq(0,10000,2000)) +
     ggthemes::scale_fill_tableau() +
     ggtitle("Recurrencia general") +
@@ -197,4 +197,73 @@ Algunas observaciones que pueden hacerse a partir de la visualización anterior:
 
 -   Las personas que se matriculan en propuestas de *Pedagogía y Cultura* a partir del 2019 son mayormente recurrentes en propuestas pertenecientes a este grupo.
 
--   En el año 2020 el grupo de *propuestas del campo de las tecnologías* tuvo un elevado número de personas (mayormente nuevas). Las propuestas con mayor número de personas fueron la *Actualización Académica Enseñar con Herramientas Digitales*, el *Taller la Clase en Pantuflas*, el *Seminario de Pensamiento Computacional* y el taller: *Dar clase con herramientas digitales.*
+-   En el año 2020 el grupo de *propuestas del campo de las tecnologías* tuvo un elevado número de personas (mayormente nuevas). Las propuestas con mayor número de personas matriculadas aceptadas fueron la *Actualización Académica Enseñar con Herramientas Digitales*, el *Taller la Clase en Pantuflas*, el *Seminario de Pensamiento Computacional* y el taller: *Dar clase con herramientas digitales.*
+
+
+
+
+```{r recurrentes y tipo de propuesta}
+
+personas_periodo <- datos %>% 
+  mutate(
+  periodo = case_when(
+    cohorte_anio == 2016 ~ "2016",
+    cohorte_anio == 2017 ~ "2017",
+    cohorte_anio == 2018 ~ "2018",
+    cohorte_anio == 2019 ~ "2019",
+    cohorte_anio == 2020 ~ "2020",
+    cohorte_anio == 2021 ~ "2021",
+    cohorte_anio == 2022 ~ "2022"),
+  periodo = factor(periodo, levels = c("2016","2017","2018","2019","2020","2021","2022")),
+  ) %>% 
+  select(idpersona, periodo) %>% 
+  distinct() %>% 
+  arrange(periodo) %>% 
+  group_by(idpersona) %>% 
+  mutate(prev = lag(periodo))
+
+datos_tipo <- datos %>% 
+  mutate(
+    periodo = case_when(
+      cohorte_anio == 2016 ~ "2016",
+      cohorte_anio == 2017 ~ "2017",
+      cohorte_anio == 2018 ~ "2018",
+      cohorte_anio == 2019 ~ "2019",
+      cohorte_anio == 2020 ~ "2020",
+      cohorte_anio == 2021 ~ "2021",
+      cohorte_anio == 2022 ~ "2022"),
+    periodo = factor(periodo, levels = c("2016","2017","2018","2019","2020","2021","2022")),
+  ) %>% 
+  mutate(tipo = case_when(
+    tipo == "Seminario" ~ "Curso",
+    tipo == "Trayecto" ~ "Postítulo",
+    tipo == "Profesorado" ~ "Profesorado",
+    TRUE ~ "Formación académica"),
+    tipo = as.factor(tipo)) %>% 
+  select(idmatriculacion, idpersona, periodo, tipo) %>% 
+  left_join(personas_periodo, by = c("idpersona", "periodo")) %>% 
+  filter(!is.na(prev)) %>% 
+  group_by(tipo) %>% 
+  summarise(n = n_distinct(idmatriculacion)) %>% 
+  mutate(pct = n / sum(n))
+
+ggplot(datos_tipo, aes(x = "", y = pct)) +
+  geom_bar(aes(fill = fct_reorder(tipo, pct)), 
+           stat = "identity", width = 1, color = "white") +
+  coord_polar("y", start = 0) +
+  ggthemes::scale_fill_tableau(direction = -1) +
+  ggtitle("Distribución de matriculas de personas recurrentes por tipo de propuesta") +
+  guides(x = "none", y = "none", fill = guide_legend(reverse = TRUE)) +
+  labs(
+    fill = "Tipo",
+    subtitle = "Las personas recurrentes se matriculan mayormente en <i style='color:#1170aa'>cursos</i> o propuestas cortas<br> (71%) y en <i style='color:#fc7d0b'>postítulos</i> (26%)") +
+  theme_void() +
+  theme(
+    plot.title.position = "plot",
+    plot.subtitle = element_markdown()
+  )
+
+
+
+```
+
