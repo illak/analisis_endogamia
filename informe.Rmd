@@ -1,9 +1,8 @@
 ---
-title: "Informe recurrencia"
-author: "Illak Zapata"
+title: "Informe de recurrencia"
+author: ''
 date: "2022-09-11"
 output:
-  pdf_document: null
   prettydoc::html_pretty:
     theme: hpstr
     highlight: github
@@ -127,6 +126,8 @@ porcentajes_df <- data.frame(
 
 ```
 
+> A partir del 2019, cada 10 personas que se matriculan en propuestas, 5 son recurrentes, es decir, ya se han matriculado en al menos una propuesta formativa anteriormente.
+
 A continuación se realiza el mismo análisis pero ahora al interior de cada grupo de propuestas.
 
 ```{r recurrencia x grupo, fig.width=11, fig.asp=0.8}
@@ -189,3 +190,11 @@ recurrencia_x_grupo
 
 
 ```
+
+Algunas observaciones que pueden hacerse a partir de la visualización anterior:
+
+-   Los *Seminarios* mantienen una cantidad alta de personas a lo largo del tiempo y el porcentaje de personas recurrentes crece con el tiempo. Sin embargo el mayor porcentaje de personas matriculadas en cada año corresponde a personas nuevas.
+
+-   Las personas que se matriculan en propuestas de *Pedagogía y Cultura* a partir del 2019 son mayormente recurrentes en propuestas pertenecientes a este grupo.
+
+-   En el año 2020 el grupo de *propuestas del campo de las tecnologías* tuvo un elevado número de personas (mayormente nuevas). Las propuestas con mayor número de personas fueron la *Actualización Académica Enseñar con Herramientas Digitales*, el *Taller la Clase en Pantuflas*, el *Seminario de Pensamiento Computacional* y el taller: *Dar clase con herramientas digitales.*
