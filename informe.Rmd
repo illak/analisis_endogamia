@@ -3,8 +3,10 @@ title: "Informe recurrencia"
 author: "Illak Zapata"
 date: "2022-09-11"
 output:
-  pdf_document: default
-  html_document: default
+  pdf_document: null
+  prettydoc::html_pretty:
+    theme: hpstr
+    highlight: github
 ---
 
 ```{r setup, include=FALSE}
@@ -26,7 +28,9 @@ datos_agrupaciones <- read_csv("data/agrupaciones.csv")
 
 ```
 
+## Recurrencia general
 
+El siguiente análisis considera únicamente personas que registran matrícula inicial en el período que va de 2016 a 2022. Para cada año se cuentan personas únicas que se han matrículado en alguna propuesta y estuvieron en condiciones de iniciar la cursada (destinatarios). Si en un año determinado una persona se matriculó pero ya registraba una matrícula en algún año anterior se la considera *recurrente*, caso contrario se la considea como una persona *nueva* en el instituto.
 
 ```{r recurrencia general, fig.width=11, fig.asp=0.8}
 datos_categorias <- datos %>% 
@@ -123,6 +127,8 @@ porcentajes_df <- data.frame(
 
 ```
 
+A continuación se realiza el mismo análisis pero ahora al interior de cada grupo de propuestas.
+
 ```{r recurrencia x grupo, fig.width=11, fig.asp=0.8}
 
 datos_personas <- datos %>% 
@@ -183,6 +189,3 @@ recurrencia_x_grupo
 
 
 ```
-
-
-
