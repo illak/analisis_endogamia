@@ -285,7 +285,7 @@ recurrencia_x_grupo <- dfs %>%
     strip.text = element_text(size = 12),
     plot.title.position = "plot",
     axis.text.x = element_text(angle = 45, hjust = 1, size = 10),
-    plot.subtitle = element_markdown()
+    plot.subtitle = element_markdown(color = "grey40")
   )
 
 recurrencia_x_grupo
