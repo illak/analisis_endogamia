@@ -274,10 +274,9 @@ recurrencia_x_grupo <- dfs %>%
   ggplot(aes(x = periodo, y = n, fill=categoria)) +
   geom_col() +
   ggthemes::scale_fill_tableau() +
-  labs(y = NULL) +
+  labs(y = NULL, x = NULL) +
   guides(fill = "none") +
   ggtitle("Recurrencia al interior de cada grupo de propuestas") +
-  labs(subtitle = "Personas que registran matrícula por <i style='color:#4E79A7'>primera vez</i> y personas <i style='color:#F28E2B'>recurrentes</i>") +
   facet_wrap(vars(grupo)) +
   theme_minimal(base_size = 17) +
   theme(
@@ -285,7 +284,7 @@ recurrencia_x_grupo <- dfs %>%
     strip.text = element_text(size = 12),
     plot.title.position = "plot",
     axis.text.x = element_text(angle = 45, hjust = 1, size = 10),
-    plot.subtitle = element_markdown(color = "grey40")
+    plot.margin = margin(5,5,5,10)
   )
 
 recurrencia_x_grupo
@@ -364,21 +363,31 @@ porcentajes_df <- data.frame(
     geom_col(aes(fill = categoria), width = .5, color = "black") +
     geom_text(aes(label = n, group = categoria), position=position_stack(vjust=0.5)) +
     geom_segment(data = lineas_v, mapping = aes(x = x, xend = xend, y = y, yend = yend),
-                 size = 1, linetype = "dashed", color = "grey50") +
+                 size = .5, linetype = "dashed", color = "grey50") +
     geom_segment(data = lineas_h, mapping = aes(x = x, xend = xend, y = y, yend = yend),
-                 size = 1, color = "grey50") +
-    geom_text(data = porcentajes_df, 
-              mapping = aes(label = scales::percent(label, accuracy = 1), x = x, y = y), 
-              hjust = 0, size = 5, color = "grey30") +
+                 size = .5, color = "grey50") +
+    geom_label(data = porcentajes_df, 
+              mapping = aes(label = scales::percent(label, accuracy = 1), x = x -.1, y = y), 
+              hjust = 0, size = 4, color = "grey30") +
     scale_y_continuous(breaks = seq(0,10000,2000)) +
     ggthemes::scale_fill_tableau() +
     ggtitle("Recurrencia general") +
     coord_cartesian(clip = "off") +
-    labs(y = NULL, fill = "Categoría", x = "Año") +
+    guides(fill = "none") +
+    labs(y = NULL, x = NULL,
+         subtitle = "Personas que registran matrícula por <i style='color:#4E79A7'>primera vez</i> y personas <i style='color:#F28E2B'>recurrentes</i>") +
     theme_minimal(base_size = 17) +
     theme(
       axis.text.x = element_markdown(),
       plot.title.position = "plot",
       legend.position = "top",
-      plot.margin = margin(0,10,0,0,unit="mm")
+      plot.margin = margin(5,10,5,5,unit="mm"),
+      plot.subtitle = element_markdown(color = "grey40")
     ))
+
+
+plot_final <- recurrencia_periodos_plot + recurrencia_x_grupo +
+  plot_layout(widths = c(1.5,2))
+
+
+plot_final
