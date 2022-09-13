@@ -3,6 +3,7 @@ title: "Informe de recurrencia"
 author: ''
 date: "2022-09-11"
 output:
+  pdf_document:
   prettydoc::html_pretty:
     theme: hpstr
     highlight: github
@@ -202,7 +203,7 @@ Algunas observaciones que pueden hacerse a partir de la visualización anterior:
 
 
 
-```{r recurrentes y tipo de propuesta}
+```{r recurrentes x tipo de propuesta, fig.width=11, fig.asp=0.8}
 
 personas_periodo <- datos %>% 
   mutate(
@@ -250,6 +251,9 @@ datos_tipo <- datos %>%
 ggplot(datos_tipo, aes(x = "", y = pct)) +
   geom_bar(aes(fill = fct_reorder(tipo, pct)), 
            stat = "identity", width = 1, color = "white") +
+  ggrepel::geom_label_repel(aes(label = scales::percent(pct, accuracy = 1), 
+                                group = fct_reorder(tipo, pct)), 
+            position = position_stack(vjust = .5), size = 8) +
   coord_polar("y", start = 0) +
   ggthemes::scale_fill_tableau(direction = -1) +
   ggtitle("Distribución de matriculas de personas recurrentes por tipo de propuesta") +
@@ -257,12 +261,64 @@ ggplot(datos_tipo, aes(x = "", y = pct)) +
   labs(
     fill = "Tipo",
     subtitle = "Las personas recurrentes se matriculan mayormente en <i style='color:#1170aa'>cursos</i> o propuestas cortas<br> (71%) y en <i style='color:#fc7d0b'>postítulos</i> (26%)") +
-  theme_void() +
+  theme_void(base_size = 17) +
   theme(
     plot.title.position = "plot",
     plot.subtitle = element_markdown()
   )
 
+
+
+```
+
+Como se observa en la gráfica anterior las personas recurrentes se matriculan mayormente en cursos y esto se mantiene si agregamos la dimensión del año de matriculación.
+
+```{r recurrentes x tipo x periodo, fig.width=11, fig.asp=0.8}
+
+datos_tipo_periodo <- datos %>% 
+  mutate(
+    periodo = case_when(
+      cohorte_anio == 2016 ~ "2016",
+      cohorte_anio == 2017 ~ "2017",
+      cohorte_anio == 2018 ~ "2018",
+      cohorte_anio == 2019 ~ "2019",
+      cohorte_anio == 2020 ~ "2020",
+      cohorte_anio == 2021 ~ "2021",
+      cohorte_anio == 2022 ~ "2022"),
+    periodo = factor(periodo, levels = c("2016","2017","2018","2019","2020","2021","2022")),
+  ) %>% 
+  mutate(tipo = case_when(
+    tipo == "Seminario" ~ "Curso",
+    tipo == "Trayecto" ~ "Postítulo",
+    tipo == "Profesorado" ~ "Profesorado",
+    TRUE ~ "Formación académica"),
+    tipo = as.factor(tipo)) %>% 
+  select(idmatriculacion, idpersona, periodo, tipo) %>% 
+  left_join(personas_periodo, by = c("idpersona", "periodo")) %>% 
+  filter(!is.na(prev)) %>% 
+  group_by(periodo,tipo) %>% 
+  summarise(n = n_distinct(idmatriculacion)) %>% 
+  mutate(pct = n / sum(n))
+
+ggplot(datos_tipo_periodo, aes(x = "", y = pct)) +
+  geom_bar(aes(fill = fct_reorder(tipo, pct)), 
+           stat = "identity", width = 1, color = "white") +
+  ggrepel::geom_label_repel(aes(label = scales::percent(pct, accuracy = 1), 
+                                group = fct_reorder(tipo, pct)), 
+            position = position_stack(vjust = .5)) +
+  coord_polar("y", start = 0) +
+  ggthemes::scale_fill_tableau(direction = -1) +
+  ggtitle("Distribución de matriculas de personas recurrentes por tipo de propuesta en cada año") +
+  guides(x = "none", y = "none", fill = guide_legend(reverse = TRUE)) +
+  facet_wrap(vars(periodo)) +
+  labs(
+    fill = "Tipo") +
+  theme_void(base_size = 17) +
+  theme(
+    plot.title = element_text(margin = margin(5,5,60,5)),
+    plot.subtitle = element_markdown(),
+    strip.text = element_text(size = 20)
+  )
 
 
 ```
