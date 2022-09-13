@@ -2,10 +2,7 @@
 title: "Informe de recurrencia"
 author: ''
 date: "2022-09-11"
-output:
-  prettydoc::html_pretty:
-    theme: hpstr
-    highlight: github
+output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
@@ -26,20 +23,6 @@ datos <- read_csv("data/datos_v4.csv")
 datos_agrupaciones <- read_csv("data/agrupaciones.csv")
 
 ```
-
-```{r botón de descarga informe en PDF}
-# Activar este chunk sólamente al exportar la versión HTML
-download_link(
-  link = "https://github.com/illak/analisis_endogamia/raw/main/informe.pdf",
-  button_label = "Descargar versión en PDF",
-  button_type = "danger",
-  has_icon = TRUE,
-  icon = "fa fa-save",
-  self_contained = FALSE
-)
-
-```
-
 
 ## Recurrencia general
 
