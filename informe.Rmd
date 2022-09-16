@@ -9,7 +9,7 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE, message = FALSE)
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
 ```
 
 ```{r librerias}
@@ -43,7 +43,7 @@ download_link(
 
 ## Recurrencia general
 
-El siguiente análisis considera únicamente personas que registran matrícula inicial en el período que va de 2016 a 2022. Para cada año se cuentan personas únicas que se han matrículado en alguna propuesta y estuvieron en condiciones de iniciar la cursada (destinatarios). Si en un año determinado una persona se matriculó pero ya registraba una matrícula en algún año anterior se la considera *recurrente*, caso contrario se la considea como una persona *nueva* en el instituto.
+El siguiente análisis considera únicamente personas que registran matrícula inicial en el período que va de 2016 a 2022. Para cada año, se cuentan personas únicas que se han matriculado en alguna propuesta y estuvieron en condiciones de iniciar la cursada (destinatarios). Si en un año determinado una persona se matriculó pero ya registraba una matrícula en algún año anterior, se la considera *recurrente*, caso contrario, se la considera como una persona *nueva* en el instituto.
 
 ```{r recurrencia general, fig.width=11, fig.asp=0.8}
 datos_categorias <- datos %>% 
@@ -140,7 +140,7 @@ porcentajes_df <- data.frame(
 
 ```
 
-> A partir del 2019, cada 10 personas que se matriculan en propuestas, 5 son recurrentes, es decir, ya se han matriculado en al menos una propuesta formativa anteriormente.
+> A partir del 2019, cada 10 personas que se matriculan en propuestas, 5 son recurrentes, es decir, ya se han matriculado en al menos una propuesta formativa anteriormente. Dicho de otra forma, a partir del 2019, del total de matrículas iniciales, el 50% corresponde a personas recurrentes.
 
 
 ```{r recurrencia general - minimo año, fig.width=11, fig.asp=0.8}
@@ -239,7 +239,7 @@ porcentajes_df <- data.frame(
     ))
 ```
 
-A continuación se realiza el mismo análisis pero ahora al interior de cada grupo de propuestas.
+A continuación se realiza el mismo análisis pero al interior de cada grupo de propuestas (agrupaciones ad-hoc).
 
 ```{r recurrencia x grupo, fig.width=11, fig.asp=0.8}
 
@@ -304,7 +304,7 @@ recurrencia_x_grupo
 
 Algunas observaciones que pueden hacerse a partir de la visualización anterior:
 
--   Los *Seminarios* mantienen una cantidad alta de personas a lo largo del tiempo y el porcentaje de personas recurrentes crece con el tiempo. Sin embargo el mayor porcentaje de personas matriculadas en cada año corresponde a personas nuevas.
+-   Los *Seminarios* mantienen una cantidad alta de personas a lo largo del tiempo y el porcentaje de personas recurrentes crece con el tiempo. Sin embargo, el mayor porcentaje de personas matriculadas en cada año corresponde a personas nuevas.
 
 -   Las personas que se matriculan en propuestas de *Pedagogía y Cultura* a partir del 2019 son mayormente recurrentes en propuestas pertenecientes a este grupo.
 
@@ -381,7 +381,7 @@ ggplot(datos_tipo, aes(x = "", y = pct)) +
 
 ```
 
-Como se observa en la gráfica anterior las personas recurrentes se matriculan mayormente en cursos y esto se mantiene si agregamos la dimensión del año de matriculación.
+Como se observa en la gráfica anterior, las personas recurrentes se matriculan mayormente en cursos y esto se mantiene si agregamos la dimensión del año de matriculación.
 
 ```{r recurrentes x tipo x periodo, fig.width=11, fig.asp=0.8}
 
