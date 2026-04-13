@@ -20,7 +20,9 @@ datos_endogamia1 <- datos %>%
 
 
 
-datos <- read_csv("data/datos_v4.csv")
+#datos <- read_csv("data/datos_v4.csv")
+#datos <- read_csv("data/datos_v5_2024.csv")
+datos <- read_csv("data/data_test.csv")
 
 datos_categorias <- datos %>% 
   mutate(
@@ -294,6 +296,7 @@ recurrencia_x_grupo
 
 
 datos_categorias <- datos %>% 
+  filter(cohorte_anio <= 2023) |> 
   mutate(
     periodo = case_when(
       cohorte_anio == 2016 ~ "2016",
@@ -302,8 +305,9 @@ datos_categorias <- datos %>%
       cohorte_anio == 2019 ~ "2019",
       cohorte_anio == 2020 ~ "2020",
       cohorte_anio == 2021 ~ "2021",
-      cohorte_anio == 2022 ~ "2022"),
-    periodo = factor(periodo, levels = c("2016","2017","2018","2019","2020","2021","2022")),
+      cohorte_anio == 2022 ~ "2022",
+      cohorte_anio == 2023 ~ "2023"),
+    periodo = factor(periodo, levels = c("2016","2017","2018","2019","2020","2021","2022","2023")),
   ) %>% 
   select(idpersona, periodo) %>% 
   distinct() %>% 
@@ -321,7 +325,7 @@ lineas_verticales_alturas <- datos_categorias %>%
   summarise(altura = n_distinct(idpersona)) %>% 
   pull(altura)
 
-lineas_verticales_pos <- c(2.35,3.35,4.35,5.35,6.35,7.35)
+lineas_verticales_pos <- c(2.35,3.35,4.35,5.35,6.35,7.35,8.35)
 
 lineas_v <- data.frame(
   x = lineas_verticales_pos,
@@ -331,8 +335,8 @@ lineas_v <- data.frame(
 )
 
 lineas_h <- data.frame(
-  x = c(2.3,3.3,4.3,5.3,6.3,7.3),
-  xend = c(2.4,3.4,4.4,5.4,6.4,7.4),
+  x = c(2.3,3.3,4.3,5.3,6.3,7.3,8.3),
+  xend = c(2.4,3.4,4.4,5.4,6.4,7.4,8.4),
   y = lineas_verticales_alturas,
   yend = lineas_verticales_alturas
 )
@@ -347,7 +351,7 @@ porcentajes <- datos_categorias %>%
 
 porcentajes_df <- data.frame(
   label = porcentajes,
-  x = c(2.4,3.4,4.4,5.4,6.4,7.4),
+  x = c(2.4,3.4,4.4,5.4,6.4,7.4,8.4),
   y = lineas_verticales_alturas / 2
 )
 
@@ -361,24 +365,24 @@ porcentajes_df <- data.frame(
     mutate(periodo_mod = glue("<i>{periodo}</i>")) %>% 
     ggplot(aes(x = periodo_mod, y = n)) +
     geom_col(aes(fill = categoria), width = .5, color = "black") +
-    geom_text(aes(label = n, group = categoria), position=position_stack(vjust=0.5)) +
+    geom_text(aes(label = n, group = categoria), position=position_stack(vjust=0.5), size=7) +
     geom_segment(data = lineas_v, mapping = aes(x = x, xend = xend, y = y, yend = yend),
                  size = .5, linetype = "dashed", color = "grey50") +
     geom_segment(data = lineas_h, mapping = aes(x = x, xend = xend, y = y, yend = yend),
                  size = .5, color = "grey50") +
     geom_label(data = porcentajes_df, 
               mapping = aes(label = scales::percent(label, accuracy = 1), x = x -.1, y = y), 
-              hjust = 0, size = 4, color = "grey30") +
+              hjust = 0, size = 6, color = "grey30") +
     scale_y_continuous(breaks = seq(0,10000,2000)) +
     ggthemes::scale_fill_tableau() +
     ggtitle("Recurrencia general") +
     coord_cartesian(clip = "off") +
     guides(fill = "none") +
     labs(y = NULL, x = NULL,
-         subtitle = "Personas que registran matrícula por <i style='color:#4E79A7'>primera vez</i> y personas <i style='color:#F28E2B'>recurrentes</i>") +
-    theme_minimal(base_size = 17) +
+         subtitle = "Personas que registran matrícula por <b><i style='color:#4E79A7'>primera vez</i></b> y personas <b><i style='color:#F28E2B'>recurrentes</i></b>") +
+    theme_minimal(base_size = 22) +
     theme(
-      axis.text.x = element_markdown(),
+      axis.text.x = element_markdown(size = 22),
       plot.title.position = "plot",
       legend.position = "top",
       plot.margin = margin(5,10,5,5,unit="mm"),
@@ -386,8 +390,29 @@ porcentajes_df <- data.frame(
     ))
 
 
+ggsave("plot_recurrencia.png", recurrencia_periodos_plot, width = 12, height = 7, dpi = 320)
+
+
 plot_final <- recurrencia_periodos_plot + recurrencia_x_grupo +
   plot_layout(widths = c(1.5,2))
 
 
 plot_final
+
+
+
+
+
+
+datos_categorias %>% 
+  group_by(periodo) %>% 
+  summarise(nuevas = n_distinct(idpersona[is.na(prev)]),
+            recurrentes = n_distinct(idpersona[!is.na(prev)]),
+            pct_recurrentes = recurrentes/(nuevas+recurrentes)) %>% 
+  mutate(nuevas = as.character(nuevas)) |> 
+  mutate(recurrentes = as.character(recurrentes)) |> 
+  mutate(pct_recurrentes = scales::label_percent()(pct_recurrentes)) |> 
+  ungroup() |> 
+  pivot_longer(cols=c(nuevas, recurrentes, pct_recurrentes), names_to = "tipo") |> 
+  pivot_wider(names_from = periodo) |> 
+  write_csv("output.csv")
